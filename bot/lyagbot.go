@@ -66,12 +66,18 @@ func (b *lyagBot) Run(checkSent bool) {
 				continue
 			}
 
-			if checkSent && needNotify(b.storage, &seance) == false {
+			if checkSent {
+				notify := needNotify(b.storage, &seance)
+
 				// prolong status if seance known, set TTL 1+ operation
 				ttl := b.settings.Duration + (b.settings.Duration / 3)
 				err := b.storage.SetStatus(&seance, true, ttl)
 				if err != nil {
 					log.Printf("Error while set status for %s; %s", seance, err)
+				}
+
+				if notify == false {
+					continue
 				}
 			}
 
