@@ -29,6 +29,8 @@ func NewLyagBot(settings *core.Settings, yClients core.YClients, storage storage
 		settings:    settings,
 	}
 
+	go bot.ProcessIncomingMessages()
+
 	return bot, nil
 }
 
@@ -132,15 +134,16 @@ func (b *lyagBot) ProcessIncomingMessages() {
 
 	for update := range updates {
 		if update.CallbackQuery != nil {
-
 			chatId := update.CallbackQuery.Message.Chat.ID
+			key := update.CallbackQuery.Data
+
+			log.Printf("CallbackQuery from %d, data: %s", chatId, key)
 
 			if chatId != b.settings.ChatID {
 				log.Printf("Unknown chat ID for CallbackQuery %v", chatId)
 				continue
 			}
 
-			key := update.CallbackQuery.Data
 			staffId, date, err := core.ParseKey(key)
 
 			if err != nil {
@@ -167,16 +170,27 @@ func (b *lyagBot) ProcessIncomingMessages() {
 					log.Printf("Error while send booking error message! %s", err)
 				}
 			}
-		}
+		} else {
+			chatId := update.Message.Chat.ID
 
-		if update.Message == nil { // ignore any non-Message Updates
-			continue
-		}
+			if chatId != b.settings.ChatID {
+				log.Printf("Unknown chat ID for Message %v", chatId)
+				continue
+			}
 
-		if update.Message.IsCommand() {
-			switch cmd := update.Message.Command(); cmd {
-			case "all":
-				b.Run(false)
+			if update.Message == nil {
+				continue
+			}
+
+			if update.Message.IsCommand() {
+				cmd := update.Message.Command()
+
+				log.Printf("command received from chatId %d: %s", chatId, cmd)
+
+				switch cmd {
+				case "all":
+					go b.Run(false)
+				}
 			}
 		}
 	}
