@@ -1,10 +1,12 @@
 version: "3"
 services:
   app:
+    restart: always
     container_name: "lyag_bot"
     build: .
     env_file:
       - ./bot.env
   redis:
+    restart: always
     container_name: "lyag_redis"
     image: "redis:alpine"
